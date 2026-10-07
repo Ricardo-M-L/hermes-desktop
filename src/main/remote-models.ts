@@ -211,15 +211,25 @@ export async function remoteListModels(
   config: RemoteSessionConfig,
 ): Promise<SavedModel[]> {
   const libraryRows = await remoteModelLibraryRows(config);
-  if (libraryRows) return libraryRows;
-
-  // Older Hermes Agent dashboards do not expose the configured model
-  // library yet. Fall back to a narrow picker-derived view instead of
-  // flattening the whole authenticated provider catalog.
-  const response = await remoteRequestJson(config, "/api/model/options", {
-    timeoutMs: REMOTE_MODEL_OPTIONS_TIMEOUT_MS,
-  });
-  return modelsFromRemoteOptions(response);
+  try {
+    // The configured library can contain only the active row on a fresh
+    // profile. Merge the current provider's picker options so switching models
+    // remains possible, while modelsFromRemoteOptions keeps unrelated
+    // authenticated providers out of the list.
+    const response = await remoteRequestJson(config, "/api/model/options", {
+      timeoutMs: REMOTE_MODEL_OPTIONS_TIMEOUT_MS,
+    });
+    const optionRows = modelsFromRemoteOptions(response);
+    return libraryRows
+      ? dedupeModels([...libraryRows, ...optionRows])
+      : optionRows;
+  } catch (error) {
+    // A modern dashboard's configured library is still useful when its model
+    // discovery endpoint is temporarily unavailable. Older dashboards have no
+    // library endpoint, so preserve the model-options error for their callers.
+    if (libraryRows) return libraryRows;
+    throw error;
+  }
 }
 
 export async function remoteGetModelConfig(
