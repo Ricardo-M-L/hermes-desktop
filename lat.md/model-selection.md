@@ -24,7 +24,7 @@ A **Configure** button is pinned at the bottom of the provider rail (below the s
 
 Remote and SSH pickers combine the profile's saved model library with the current provider's models from `/api/model/options`, keeping saved labels first and deduplicating by routing identity.
 
-This matters for fresh named profiles: `/api/model/library` may contain only the active model until shortcuts are saved, while the provider options still advertise every model that the CLI can select. If options discovery is unavailable, the saved library remains usable. Providers that are merely authenticated but neither current nor user-defined stay hidden, preserving the configured-only picker policy.
+This matters for fresh named profiles: `/api/model/library` may contain only the active model until shortcuts are saved, while the provider options still advertise every model that the CLI can select. If options discovery is unavailable, the saved library remains usable. When saved rows already exist, options enrichment is limited to 5 seconds so stalled discovery cannot hide those rows for the normal 60-second discovery window. Providers that are merely authenticated but neither current nor user-defined stay hidden, preserving the configured-only picker policy.
 
 ### Named profiles keep the current provider catalog
 

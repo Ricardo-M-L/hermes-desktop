@@ -1,5 +1,5 @@
 import http from "http";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   remoteAddModel,
   remoteGetModelConfig,
@@ -30,6 +30,7 @@ function startServer(
 }
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   if (server) {
     await new Promise<void>((resolve) => server!.close(() => resolve()));
     server = null;
@@ -39,6 +40,7 @@ afterEach(async () => {
 describe("remote dashboard models", () => {
   // @lat: [[model-selection#Session model override#Remote picker catalog#Named profiles keep the current provider catalog]]
   it("merges current-provider options into a named profile's library", async () => {
+    const timeoutSpy = vi.spyOn(http.ClientRequest.prototype, "setTimeout");
     const { url } = await startServer((req, res) => {
       expect(req.headers["x-hermes-session-token"]).toBe("token");
       res.setHeader("Content-Type", "application/json");
@@ -100,6 +102,8 @@ describe("remote dashboard models", () => {
       name: "GPT-6.1",
     });
     expect(models.some((model) => model.provider === "anthropic")).toBe(false);
+    expect(timeoutSpy).toHaveBeenNthCalledWith(1, 20_000, expect.any(Function));
+    expect(timeoutSpy).toHaveBeenNthCalledWith(2, 5_000, expect.any(Function));
   });
 
   it("keeps configured rows when model options are unavailable", async () => {

@@ -4,6 +4,7 @@ import { normalizeModelEndpointUrl } from "../shared/model-endpoint";
 
 type RemoteRecord = Record<string, unknown>;
 const REMOTE_MODEL_OPTIONS_TIMEOUT_MS = 60_000;
+const REMOTE_MODEL_OPTIONS_ENRICHMENT_TIMEOUT_MS = 5_000;
 const REMOTE_MODEL_LIBRARY_TIMEOUT_MS = 20_000;
 
 function asRecord(value: unknown): RemoteRecord {
@@ -217,7 +218,9 @@ export async function remoteListModels(
     // remains possible, while modelsFromRemoteOptions keeps unrelated
     // authenticated providers out of the list.
     const response = await remoteRequestJson(config, "/api/model/options", {
-      timeoutMs: REMOTE_MODEL_OPTIONS_TIMEOUT_MS,
+      timeoutMs: libraryRows?.length
+        ? REMOTE_MODEL_OPTIONS_ENRICHMENT_TIMEOUT_MS
+        : REMOTE_MODEL_OPTIONS_TIMEOUT_MS,
     });
     const optionRows = modelsFromRemoteOptions(response);
     return libraryRows
